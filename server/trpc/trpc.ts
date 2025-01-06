@@ -52,6 +52,7 @@ const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
   const token = getCookie(event, COOK_ACCESS_TOKEN) || ''
 
   if (!token) {
+    deleteCookie(event, COOK_ACCESS_TOKEN)
     deleteCookie(event, COOK_REFRESH_TOKEN)
   }
 
@@ -89,6 +90,7 @@ const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
     if (error instanceof jwt.TokenExpiredError) {
       throw new TRPCError({ code: 'UNAUTHORIZED', message: TOKEN_EXPIRED })
     }
+
     throw new TRPCError({ code: 'UNAUTHORIZED', message: INVALID_TOKEN })
   }
 }

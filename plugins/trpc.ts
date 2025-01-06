@@ -16,8 +16,6 @@ export default defineNuxtPlugin(() => {
   const headers = useRequestHeaders()
   const { csrf } = useCsrf()
   const authStore = useAuthStore()
-  // const { getTokens } = useTokens()
-  // const accessToken = getTokens()?.accessToken
 
   // Helper function to handle token refresh
   const handleTokenRefresh = async (isBatch: boolean): Promise<string | null> => {

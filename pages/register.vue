@@ -39,7 +39,7 @@ onMounted(() => {
               <UInput
                 v-model="field.value.value"
                 color="primary"
-                :type="key.includes('password') ? 'password' : 'text'"
+                :type="key.toLowerCase().includes('password') ? 'password' : 'text'"
                 :placeholder="t(`${key}_placeholder`)"
                 :autocomplete="key === 'email' ? 'email' : key.includes('password') ? 'new-password' : key"
                 :trailing-icon="fieldError ? 'i-heroicons-exclamation-triangle-20-solid' : undefined"

@@ -9,8 +9,8 @@ type JWTPayload = {
 export const generateJWT = async (payload: JWTPayload) => {
   const runtimeConfig = useRuntimeConfig()
   // expired in 10s just for testing
-  return jwt.sign(payload, runtimeConfig.jwtSecretKey, { expiresIn: '10s' })
-  // return jwt.sign(payload, runtimeConfig.jwtSecretKey, { expiresIn: '15m' })
+  // return jwt.sign(payload, runtimeConfig.jwtSecretKey, { expiresIn: '10s' })
+  return jwt.sign(payload, runtimeConfig.jwtSecretKey, { expiresIn: '15m' })
 }
 
 export const verifyJWT = async (token: string): Promise<JWTPayload> => {
