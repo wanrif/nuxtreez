@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.nuxt
+dist
+.output
+
+# Cache
+.npm
+.eslintcache
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editor directories
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Database Migration
+server/database/migrations/*
