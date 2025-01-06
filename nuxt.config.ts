@@ -145,7 +145,7 @@ export default defineNuxtConfig({
     basicAuth: false,
     enabled: true,
     csrf: {
-      https: false,
+      https: process.env.NODE_ENV === 'production',
       cookieKey: 'XSRF-TOKEN', // "__Host-csrf" if https is true otherwise just "csrf"
       cookie: {
         // CookieSerializeOptions from unjs/cookie-es

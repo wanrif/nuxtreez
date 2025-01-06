@@ -15,7 +15,7 @@ import { ZodError } from 'zod'
 
 import { TRPCError, initTRPC } from '@trpc/server'
 
-import { INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
+import { COOK_ACCESS_TOKEN, COOK_REFRESH_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
 import { rolesTable } from '~/server/database/schema/role'
 import { usersTable } from '~/server/database/schema/user'
 import type { IUser } from '~/types'
@@ -49,13 +49,25 @@ export const publicProcedure = t.procedure
 export const middleware = t.middleware
 
 const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
-  // Check cookie first, then fallback to Authorization header
-  // const token = getCookie(event, 'access_token') || getRequestHeader(event, 'Authorization')?.replace('Bearer ', '')
-  const token = getCookie(event, 'access_token')
+  const token = getCookie(event, COOK_ACCESS_TOKEN) || ''
 
-  if (!token) return null
+  if (!token) {
+    deleteCookie(event, COOK_REFRESH_TOKEN)
+  }
 
   try {
+    const findToken = await useDrizzle()
+      .select({
+        id: usersTable.id,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, token))
+      .limit(1)
+
+    if (!findToken) {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: INVALID_TOKEN })
+    }
+
     const decoded = await verifyJWT(token)
     const [user] = await useDrizzle()
       .select({

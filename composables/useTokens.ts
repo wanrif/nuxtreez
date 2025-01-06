@@ -1,8 +1,9 @@
+import { COOK_ACCESS_TOKEN, COOK_REFRESH_TOKEN } from '~/constant/jwt'
 import type { Token } from '~/types'
 
 export const useTokens = () => {
   const setTokens = (token: Token) => {
-    const accessToken = useCookie('access_token', {
+    const accessToken = useCookie(COOK_ACCESS_TOKEN, {
       path: '/',
       httpOnly: true,
       sameSite: 'strict',
@@ -10,7 +11,7 @@ export const useTokens = () => {
       secure: process.env.NODE_ENV === 'production',
     })
 
-    const refreshToken = useCookie('refresh_token', {
+    const refreshToken = useCookie(COOK_REFRESH_TOKEN, {
       path: '/',
       httpOnly: true,
       sameSite: 'strict',
@@ -23,8 +24,8 @@ export const useTokens = () => {
   }
 
   const getTokens = (): Token | null => {
-    const accessToken = useCookie('access_token').value
-    const refreshToken = useCookie('refresh_token').value
+    const accessToken = useCookie(COOK_ACCESS_TOKEN).value
+    const refreshToken = useCookie(COOK_REFRESH_TOKEN).value
 
     if (!accessToken || !refreshToken) return null
 
@@ -35,8 +36,8 @@ export const useTokens = () => {
   }
 
   const clearTokens = () => {
-    const accessToken = useCookie('access_token')
-    const refreshToken = useCookie('refresh_token')
+    const accessToken = useCookie(COOK_ACCESS_TOKEN)
+    const refreshToken = useCookie(COOK_REFRESH_TOKEN)
 
     accessToken.value = null
     refreshToken.value = null

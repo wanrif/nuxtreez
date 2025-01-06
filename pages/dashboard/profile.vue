@@ -67,21 +67,13 @@ onMounted(() => {
     window.removeEventListener('resize', checkMobile)
   })
 })
-
-const patterns = [
-  'radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)',
-  'radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.1) 0%, transparent 50%)',
-]
 </script>
 
 <template>
   <div class="mx-auto max-w-4xl px-4 sm:px-6">
     <template v-if="mounted">
       <!-- Profile Header -->
-      <div
-        class="relative mb-6 overflow-hidden rounded-xl bg-white p-6 shadow-md dark:bg-gray-800 sm:p-8"
-        :style="{ background: `${patterns.join(', ')}, var(--tw-bg-opacity)` }"
-      >
+      <div class="relative mb-6 overflow-hidden rounded-xl bg-white p-6 shadow dark:bg-gray-800 sm:p-8">
         <!-- Decorative Elements -->
         <div class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 transform">
           <div class="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 blur-3xl" />

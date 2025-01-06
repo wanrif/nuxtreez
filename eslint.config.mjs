@@ -1,5 +1,4 @@
 // @ts-check
-// import prettier from 'eslint-plugin-prettier'
 import prettierVue from 'eslint-plugin-prettier-vue'
 
 import stylistic from '@stylistic/eslint-plugin'
@@ -10,7 +9,6 @@ export default withNuxt({
   files: ['**/*.ts', '**/*.vue'],
   plugins: {
     '@stylistic': stylistic,
-    // prettier,
     'prettier-vue': prettierVue,
   },
   rules: {
@@ -21,6 +19,7 @@ export default withNuxt({
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     'vue/multi-word-component-names': 'off',
     'vue/no-multiple-template-root': 'off',
+    '@stylistic/linebreak-style': ['error', 'unix'],
     '@stylistic/semi': 'off',
     '@stylistic/quotes': 'off',
     '@stylistic/indent': 'off',
@@ -36,7 +35,6 @@ export default withNuxt({
         math: 'always',
       },
     ],
-    // 'prettier/prettier': 'error',
     'prettier-vue/prettier': [
       'error',
       {

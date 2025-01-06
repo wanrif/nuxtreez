@@ -3,7 +3,12 @@ import { z } from 'zod'
 
 import { hash, verify } from '@node-rs/argon2'
 
-import { INVALID_REFRESH_TOKEN, INVALID_USER_REFRESH_TOKEN } from '~/constant/jwt'
+import {
+  COOK_ACCESS_TOKEN,
+  COOK_REFRESH_TOKEN,
+  INVALID_REFRESH_TOKEN,
+  INVALID_USER_REFRESH_TOKEN,
+} from '~/constant/jwt'
 import { rolesTable } from '~/server/database/schema/role'
 import { usersTable } from '~/server/database/schema/user'
 import { useDrizzle } from '~/server/utils/drizzle'
@@ -99,14 +104,14 @@ export const authRouter = router({
       await storeRefreshToken(user.id, refreshToken, getRefreshTokenExpiration(), deviceInfo)
 
       // Set HTTP-only cookies
-      setCookie(ctx.event, 'access_token', accessToken, {
+      setCookie(ctx.event, COOK_ACCESS_TOKEN, accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 15 * 60, // 15 minutes
       })
 
-      setCookie(ctx.event, 'refresh_token', refreshToken, {
+      setCookie(ctx.event, COOK_REFRESH_TOKEN, refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -149,11 +154,11 @@ export const authRouter = router({
 
   logout: publicProcedure.mutation(async ({ ctx }) => {
     try {
-      const refresh_token = getCookie(ctx.event, 'refresh_token') || ''
+      const refresh_token = getCookie(ctx.event, COOK_REFRESH_TOKEN) || ''
       await deleteRefreshToken(refresh_token)
 
-      deleteCookie(ctx.event, 'access_token')
-      deleteCookie(ctx.event, 'refresh_token')
+      deleteCookie(ctx.event, COOK_ACCESS_TOKEN)
+      deleteCookie(ctx.event, COOK_REFRESH_TOKEN)
 
       return createSuccessResponse('Logout successful', undefined, 200)
     } catch (error) {
@@ -186,7 +191,7 @@ export const authRouter = router({
 
   refreshToken: publicProcedure.mutation(async ({ ctx }) => {
     try {
-      const refresh_token = getCookie(ctx.event, 'refresh_token') || ''
+      const refresh_token = getCookie(ctx.event, COOK_REFRESH_TOKEN) || ''
       const decoded = await verifyRefreshJWT(refresh_token)
 
       // Verify token exists and update last used
@@ -232,14 +237,14 @@ export const authRouter = router({
 
       await storeRefreshToken(user.id, refreshToken, getRefreshTokenExpiration(), storedToken.device_info)
 
-      setCookie(ctx.event, 'access_token', accessToken, {
+      setCookie(ctx.event, COOK_ACCESS_TOKEN, accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 15 * 60, // 15 minutes
       })
 
-      setCookie(ctx.event, 'refresh_token', refreshToken, {
+      setCookie(ctx.event, COOK_REFRESH_TOKEN, refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -254,8 +259,8 @@ export const authRouter = router({
         200
       )
     } catch (error) {
-      deleteCookie(ctx.event, 'access_token')
-      deleteCookie(ctx.event, 'refresh_token')
+      deleteCookie(ctx.event, COOK_ACCESS_TOKEN)
+      deleteCookie(ctx.event, COOK_REFRESH_TOKEN)
       if (error instanceof AuthError) throw error
       throw new AuthError(INVALID_REFRESH_TOKEN)
     }
