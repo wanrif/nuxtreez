@@ -9,7 +9,7 @@
 import SuperJSON from 'superjson'
 import { createTRPCNuxtClient, httpBatchLink, httpLink } from 'trpc-nuxt/client'
 
-import { INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
+import { FAIL_REFRESH_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
 import type { AppRouter } from '~/server/trpc/router'
 
 export default defineNuxtPlugin(() => {
@@ -73,8 +73,8 @@ export default defineNuxtPlugin(() => {
           }
         }
 
-        // Handle invalid token
-        if (errorMessage === INVALID_TOKEN) {
+        // Handle invalid token or failed refresh
+        if (errorMessage === INVALID_TOKEN || errorMessage === FAIL_REFRESH_TOKEN) {
           authStore.$reset()
           navigateTo('/login')
         }

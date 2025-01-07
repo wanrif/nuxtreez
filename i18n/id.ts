@@ -74,6 +74,8 @@ export default {
   profile_location_label: 'Lokasi',
   profile_website_label: 'Situs Web',
   profile_bio_label: 'Bio',
+  profile_toast_success: 'Profil berhasil diperbarui',
+  profile_toast_error: 'Gagal memperbarui profil',
 
   // Password
   change_password: 'Ubah Kata Sandi',

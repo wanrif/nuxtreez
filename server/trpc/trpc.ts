@@ -15,7 +15,7 @@ import { ZodError } from 'zod'
 
 import { TRPCError, initTRPC } from '@trpc/server'
 
-import { COOK_ACCESS_TOKEN, COOK_REFRESH_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
+import { COOK_ACCESS_TOKEN, COOK_REFRESH_TOKEN, FAIL_REFRESH_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
 import { rolesTable } from '~/server/database/schema/role'
 import { usersTable } from '~/server/database/schema/user'
 import type { IUser } from '~/types'
@@ -49,27 +49,53 @@ export const publicProcedure = t.procedure
 export const middleware = t.middleware
 
 const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
-  const token = getCookie(event, COOK_ACCESS_TOKEN) || ''
+  const access_token = getCookie(event, COOK_ACCESS_TOKEN)
+  const refresh_token = getCookie(event, COOK_REFRESH_TOKEN)
 
-  if (!token) {
+  // If no access token but refresh token exists, try to refresh
+  if (!access_token && refresh_token) {
+    try {
+      const { accessToken, payload } = await refreshAccessToken(refresh_token)
+      // Set new access token cookie
+      setCookie(event, COOK_ACCESS_TOKEN, accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+      })
+
+      // Continue with the new access token
+      const [user] = await useDrizzle()
+        .select({
+          id: usersTable.id,
+          email: usersTable.email,
+          name: usersTable.name,
+          role: {
+            id: rolesTable.id,
+            name: rolesTable.name,
+          },
+        })
+        .from(usersTable)
+        .innerJoin(rolesTable, eq(usersTable.role_id, rolesTable.id))
+        .where(eq(usersTable.id, payload.id))
+        .limit(1)
+
+      return user ?? null
+    } catch {
+      // If refresh fails, clear both tokens
+      deleteCookie(event, COOK_ACCESS_TOKEN)
+      deleteCookie(event, COOK_REFRESH_TOKEN)
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: FAIL_REFRESH_TOKEN })
+    }
+  }
+
+  if (!access_token) {
     deleteCookie(event, COOK_ACCESS_TOKEN)
     deleteCookie(event, COOK_REFRESH_TOKEN)
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: INVALID_TOKEN })
   }
 
   try {
-    const findToken = await useDrizzle()
-      .select({
-        id: usersTable.id,
-      })
-      .from(usersTable)
-      .where(eq(usersTable.id, token))
-      .limit(1)
-
-    if (!findToken) {
-      throw new TRPCError({ code: 'UNAUTHORIZED', message: INVALID_TOKEN })
-    }
-
-    const decoded = await verifyJWT(token)
+    const decoded = await verifyJWT(access_token)
     const [user] = await useDrizzle()
       .select({
         id: usersTable.id,

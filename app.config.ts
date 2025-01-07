@@ -21,6 +21,9 @@ export default defineAppConfig({
         },
       },
     },
+    notifications: {
+      position: 'top-0 bottom-[unset] right-0 left-[unset]',
+    },
     skeleton: {
       base: 'animate-pulse',
       background: 'bg-gray-300/60 dark:bg-gray-700',

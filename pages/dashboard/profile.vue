@@ -11,6 +11,8 @@ useHead({
 
 const authStore = useAuthStore()
 const mounted = ref(false)
+const toast = useToast()
+const { t } = useI18n()
 
 const user = ref({
   name: authStore.user?.name || '',
@@ -37,9 +39,10 @@ const { fields, errors, isSubmitting, meta, submit, resetForm } = useProfileForm
     try {
       user.value = { ...values, avatar: user.value.avatar }
       await authStore.updateProfile(values)
+      toast.add({ title: t('profile_toast_success') })
       isEditing.value = false
-    } catch (error) {
-      console.error('Failed to update profile:', error)
+    } catch {
+      toast.add({ title: t('profile_toast_error'), color: 'red' })
     }
   }
 )
@@ -224,9 +227,9 @@ onMounted(() => {
                 {{ $t('cancel') }}
               </button>
               <button
-                :disabled="isSubmitting || !meta.valid"
+                :disabled="isSubmitting || !meta.valid || !meta.dirty"
                 type="submit"
-                class="order-1 w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white transition duration-200 hover:from-blue-700 hover:to-purple-700 sm:order-2 sm:w-auto"
+                class="order-1 w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white transition duration-200 hover:from-blue-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50 sm:order-2 sm:w-auto"
               >
                 {{ $t('save_changes') }}
               </button>

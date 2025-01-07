@@ -64,6 +64,8 @@ export default {
   profile_location_label: 'Location',
   profile_website_label: 'Website',
   profile_bio_label: 'Bio',
+  profile_toast_success: 'Profile updated successfully',
+  profile_toast_error: 'Failed to update profile',
 
   // Password
   change_password: 'Change Password',
