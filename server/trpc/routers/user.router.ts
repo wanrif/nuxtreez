@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import { TRPCError } from '@trpc/server'
-
 import { rolesTable, usersTable } from '~/server/database/schema'
 import { encryptHelper } from '~/server/utils/enryptionHelper'
 import type { IUser } from '~/types'
@@ -38,6 +36,8 @@ export const userRouter = router({
         .where(eq(usersTable.id, ctx.user.id))
         .then((rows) => rows[0])
 
+      if (!findUser) throw new NotFoundError('User not found')
+
       const user: User = {
         id: encryptedId,
         name: findUser.users.name,
@@ -56,11 +56,7 @@ export const userRouter = router({
 
       return createSuccessResponse('Profile fetched successfully', { user })
     } catch (error) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error processing user profile',
-        cause: error,
-      })
+      throw handleError(error)
     }
   }),
 
@@ -81,18 +77,12 @@ export const userRouter = router({
     .mutation(async ({ input, ctx }) => {
       try {
         if (!input.name && !input.email) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'No updates provided',
-          })
+          throw new ValidationError('No updates provided')
         }
 
         const decryptedId = encryptHelper.decrypt(input.id!, 'base64')
         if (decryptedId !== ctx.user.id) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Unauthorized to update user profile',
-          })
+          throw new ForbiddenError('You do not have permission to update this user')
         }
 
         await useDrizzle()
@@ -130,12 +120,7 @@ export const userRouter = router({
           .where(eq(usersTable.id, ctx.user.id))
           .then((rows) => rows[0])
 
-        if (!updatedUser) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Updated user not found',
-          })
-        }
+        if (!updatedUser) throw new NotFoundError('Updated user not found')
 
         const user: User = {
           id: encryptHelper.encrypt(updatedUser.users.id, 'base64'),
@@ -156,11 +141,7 @@ export const userRouter = router({
         return createSuccessResponse('Profile updated successfully', { user })
       } catch (error) {
         console.error(error)
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Error updating user profile',
-          cause: error,
-        })
+        throw handleError(error)
       }
     }),
 })

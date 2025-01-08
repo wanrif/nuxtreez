@@ -13,9 +13,9 @@ import jwt from 'jsonwebtoken'
 import SuperJSON from 'superjson'
 import { ZodError } from 'zod'
 
-import { TRPCError, initTRPC } from '@trpc/server'
+import { initTRPC } from '@trpc/server'
 
-import { COOK_ACCESS_TOKEN, COOK_REFRESH_TOKEN, FAIL_REFRESH_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
+import { COOK_ACCESS_TOKEN, COOK_REFRESH_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
 import { rolesTable } from '~/server/database/schema/role'
 import { usersTable } from '~/server/database/schema/user'
 import type { IUser } from '~/types'
@@ -80,18 +80,18 @@ const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
         .limit(1)
 
       return user ?? null
-    } catch {
+    } catch (error) {
       // If refresh fails, clear both tokens
       deleteCookie(event, COOK_ACCESS_TOKEN)
       deleteCookie(event, COOK_REFRESH_TOKEN)
-      throw new TRPCError({ code: 'UNAUTHORIZED', message: FAIL_REFRESH_TOKEN })
+      throw handleError(error)
     }
   }
 
   if (!access_token) {
     deleteCookie(event, COOK_ACCESS_TOKEN)
     deleteCookie(event, COOK_REFRESH_TOKEN)
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: INVALID_TOKEN })
+    throw new AuthError(INVALID_TOKEN)
   }
 
   try {
@@ -114,10 +114,10 @@ const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
     return user ?? null
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new TRPCError({ code: 'UNAUTHORIZED', message: TOKEN_EXPIRED })
+      throw new AuthError(TOKEN_EXPIRED)
     }
 
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: INVALID_TOKEN })
+    throw handleError(error)
   }
 }
 
@@ -126,17 +126,11 @@ const createAuthMiddleware = (requiredRole?: string) => {
     const user = await getUserFromHeader(ctx.event)
 
     if (!user || !user.role) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'You must be logged in to access this resource',
-      })
+      throw new AuthError('You must be logged in to access this resource')
     }
 
     if (requiredRole && user.role.name?.toUpperCase() !== requiredRole) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: `You must have ${requiredRole} role to access this resource`,
-      })
+      throw new ForbiddenError(`You must have ${requiredRole} role to access this resource`)
     }
 
     return next({ ctx: { ...ctx, user } })

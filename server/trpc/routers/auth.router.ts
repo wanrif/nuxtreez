@@ -84,10 +84,10 @@ export const authRouter = router({
         .where(eq(usersTable.email, input.email))
         .limit(1)
 
-      if (!user) throw new AuthError('Invalid email or password')
+      if (!user) throw new BusinessError('Invalid email or password')
 
       const isValidPassword = await verify(user.password, input.password)
-      if (!isValidPassword) throw new AuthError('Invalid email or password')
+      if (!isValidPassword) throw new BusinessError('Invalid email or password')
 
       const deviceInfo = getDeviceInfo(ctx.event)
       const accessToken = await generateJWT({
@@ -126,13 +126,24 @@ export const authRouter = router({
         200
       )
     } catch (error) {
-      if (error instanceof AuthError) throw error
-      throw new AuthError('An error occurred during login. Please try again later.')
+      throw handleError(error)
     }
   }),
 
   register: publicProcedure.input(registerSchema).mutation(async ({ input }) => {
     try {
+      const existingUser = await useDrizzle()
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.email, input.email))
+        .limit(1)
+
+      if (existingUser.length) {
+        throw new ValidationError('Registration failed', {
+          email: ['Email already registered'],
+        })
+      }
+
       const hashPassword = await hash(input.password)
       const findUserRole = await useDrizzle().select().from(rolesTable).where(eq(rolesTable.name, 'user')).limit(1)
 
@@ -147,8 +158,7 @@ export const authRouter = router({
 
       return createSuccessResponse('Registration successful', undefined, 201)
     } catch (error) {
-      if (error instanceof AuthError) throw error
-      throw new AuthError('An error occurred during registration. Please try again later.')
+      throw handleError(error)
     }
   }),
 
@@ -162,8 +172,7 @@ export const authRouter = router({
 
       return createSuccessResponse('Logout successful', undefined, 200)
     } catch (error) {
-      if (error instanceof AuthError) throw error
-      throw new AuthError('Logout failed')
+      throw handleError(error)
     }
   }),
 
@@ -172,8 +181,7 @@ export const authRouter = router({
       const mockToken = nanoid()
       return createSuccessResponse('Password reset link has been sent to your email', { token: mockToken }, 200)
     } catch (error) {
-      if (error instanceof AuthError) throw error
-      throw new AuthError('Failed to process password reset request')
+      throw handleError(error)
     }
   }),
 
@@ -184,8 +192,7 @@ export const authRouter = router({
 
       return createSuccessResponse('Password has been reset successfully', undefined, 200)
     } catch (error) {
-      if (error instanceof AuthError) throw error
-      throw new AuthError('Failed to reset password')
+      throw handleError(error)
     }
   }),
 
@@ -295,8 +302,7 @@ export const authRouter = router({
 
       return createSuccessResponse('Password changed successfully', undefined, 200)
     } catch (error) {
-      if (error instanceof AuthError) throw error
-      throw new AuthError('An error occurred while changing password')
+      throw handleError(error)
     }
   }),
 

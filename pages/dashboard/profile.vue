@@ -39,10 +39,10 @@ const { fields, errors, isSubmitting, meta, submit, resetForm } = useProfileForm
     try {
       user.value = { ...values, avatar: user.value.avatar }
       await authStore.updateProfile(values)
-      toast.add({ title: t('profile_toast_success') })
+      toast.add({ title: t('profile_toast_success'), color: 'primary', icon: 'ph:check-circle-bold' })
       isEditing.value = false
     } catch {
-      toast.add({ title: t('profile_toast_error'), color: 'red' })
+      toast.add({ title: t('profile_toast_error'), color: 'red', icon: 'ph:x-circle-bold' })
     }
   }
 )

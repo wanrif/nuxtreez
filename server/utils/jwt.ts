@@ -1,8 +1,6 @@
 import jwt from 'jsonwebtoken'
 
-import { TRPCError } from '@trpc/server'
-
-import { FAIL_REFRESH_TOKEN, INVALID_REFRESH_TOKEN } from '~/constant/jwt'
+import { INVALID_REFRESH_TOKEN } from '~/constant/jwt'
 
 type JWTPayload = {
   id: string
@@ -43,9 +41,9 @@ export const refreshAccessToken = async (
     return { accessToken: newAccessToken, payload }
   } catch (error: unknown) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new TRPCError({ code: 'UNAUTHORIZED', message: INVALID_REFRESH_TOKEN })
+      throw new AuthError(INVALID_REFRESH_TOKEN)
     }
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: FAIL_REFRESH_TOKEN, cause: error })
+    throw handleError(error)
   }
 }
 
