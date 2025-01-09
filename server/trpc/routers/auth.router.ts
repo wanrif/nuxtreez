@@ -16,6 +16,13 @@ import { generateJWT, generateRefreshJWT } from '~/server/utils/jwt'
 
 import { protectedProcedure, publicProcedure, router } from '../trpc'
 
+interface IToken {
+  token: {
+    accessToken: string
+    refreshToken: string
+  }
+}
+
 const loginSchema = z
   .object({
     email: z.string().email('Invalid email format'),
@@ -118,7 +125,7 @@ export const authRouter = router({
         maxAge: 7 * 24 * 60 * 60, // 7 days
       })
 
-      return createSuccessResponse(
+      return createSuccessResponse<IToken>(
         'Login successful',
         {
           token: { accessToken, refreshToken },
@@ -258,7 +265,7 @@ export const authRouter = router({
         maxAge: 7 * 24 * 60 * 60, // 7 days
       })
 
-      return createSuccessResponse(
+      return createSuccessResponse<IToken>(
         'Token refreshed successfully',
         {
           token: { accessToken, refreshToken },

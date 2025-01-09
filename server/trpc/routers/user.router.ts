@@ -6,7 +6,9 @@ import type { IUser } from '~/types'
 
 import { protectedProcedure, router } from '../trpc'
 
-type User = IUser
+type UserResponse = {
+  user: IUser
+}
 
 export const userRouter = router({
   profile: protectedProcedure.query(async ({ ctx }) => {
@@ -38,7 +40,7 @@ export const userRouter = router({
 
       if (!findUser) throw new NotFoundError('User not found')
 
-      const user: User = {
+      const user: IUser = {
         id: encryptedId,
         name: findUser.users.name,
         email: findUser.users.email,
@@ -54,7 +56,7 @@ export const userRouter = router({
           : null,
       }
 
-      return createSuccessResponse('Profile fetched successfully', { user })
+      return createSuccessResponse<UserResponse>('Profile fetched successfully', { user })
     } catch (error) {
       throw handleError(error)
     }
@@ -122,7 +124,7 @@ export const userRouter = router({
 
         if (!updatedUser) throw new NotFoundError('Updated user not found')
 
-        const user: User = {
+        const user: IUser = {
           id: encryptHelper.encrypt(updatedUser.users.id, 'base64'),
           name: updatedUser.users.name,
           email: updatedUser.users.email,
@@ -138,7 +140,7 @@ export const userRouter = router({
             : null,
         }
 
-        return createSuccessResponse('Profile updated successfully', { user })
+        return createSuccessResponse<UserResponse>('Profile updated successfully', { user })
       } catch (error) {
         console.error(error)
         throw handleError(error)

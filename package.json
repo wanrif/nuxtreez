@@ -3,23 +3,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun --bun nuxt build",
-    "dev": "bun --bun nuxt dev",
-    "generate": "bun --bun nuxt generate",
-    "preview": "bun --bun nuxt preview",
-    "postinstall": "bun --bun nuxt prepare",
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --write .",
-    "db:generate": "bun drizzle-kit generate",
-    "db:migrate": "bun drizzle-kit migrate",
-    "db:push": "bun drizzle-kit push",
-    "db:seed": "bun --bun run server/database/seeders/index.ts",
-    "db:setup": "bun run db:push && bun run db:seed"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:seed": "server/database/seeders/index.ts",
+    "db:setup": "yarn db:push && yarn db:seed"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
     "@nuxt/eslint": "0.7.4",
+    "@trpc/client": "^10.45.2",
     "@trpc/server": "^10.45.2",
     "@vee-validate/nuxt": "^4.15.0",
     "@vee-validate/zod": "^4.15.0",
@@ -48,7 +49,7 @@
     "@pinia/nuxt": "^0.7.0",
     "@stylistic/eslint-plugin": "^2.12.1",
     "@trivago/prettier-plugin-sort-imports": "^5.2.1",
-    "@types/bun": "^1.1.15",
+    "@types/bun": "^1.1.16",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/ua-parser-js": "^0.7.39",
     "@vueuse/nuxt": "^11.3.0",
@@ -60,7 +61,7 @@
     "pinia-plugin-persistedstate": "^4.2.0",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
-    "typescript": "^5.7.2",
+    "typescript": "^5.7.3",
     "vue-tsc": "^2.2.0"
   }
 }

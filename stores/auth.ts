@@ -10,11 +10,9 @@ import type {
   UpdateProfileCredentials,
 } from '~/types'
 
-type User = IUser
-
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null as User | null,
+    user: null as IUser | null,
     error: null as string | null,
     loading: false,
   }),
@@ -122,7 +120,7 @@ export const useAuthStore = defineStore('auth', {
 
         if (!response.data?.user) throw new Error('No user received')
 
-        this.user = response.data.user
+        this.user = response.data.user as IUser
       } catch (error: unknown) {
         const err = error as ApiError
         this.error = err.message
@@ -153,7 +151,7 @@ export const useAuthStore = defineStore('auth', {
         if (!response.data?.user) {
           throw new Error('No user data in response')
         }
-        this.user = response.data.user as User
+        this.user = response.data.user as IUser
         return response
       } catch (error: unknown) {
         const err = error as ApiError
