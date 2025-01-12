@@ -130,14 +130,15 @@ export const authRouter = router({
         {
           token: { accessToken, refreshToken },
         },
-        200
+        200,
+        ctx.transactionId
       )
     } catch (error) {
-      throw handleError(error)
+      throw handleError(error, { transactionId: ctx.transactionId })
     }
   }),
 
-  register: publicProcedure.input(registerSchema).mutation(async ({ input }) => {
+  register: publicProcedure.input(registerSchema).mutation(async ({ input, ctx }) => {
     try {
       const existingUser = await useDrizzle()
         .select()
@@ -163,9 +164,9 @@ export const authRouter = router({
 
       await useDrizzle().insert(usersTable).values(user)
 
-      return createSuccessResponse('Registration successful', undefined, 201)
+      return createSuccessResponse('Registration successful', undefined, 201, ctx.transactionId)
     } catch (error) {
-      throw handleError(error)
+      throw handleError(error, { transactionId: ctx.transactionId })
     }
   }),
 
@@ -177,29 +178,34 @@ export const authRouter = router({
       deleteCookie(ctx.event, COOK_ACCESS_TOKEN)
       deleteCookie(ctx.event, COOK_REFRESH_TOKEN)
 
-      return createSuccessResponse('Logout successful', undefined, 200)
+      return createSuccessResponse('Logout successful', undefined, 200, ctx.transactionId)
     } catch (error) {
-      throw handleError(error)
+      throw handleError(error, { transactionId: ctx.transactionId })
     }
   }),
 
-  forgotPassword: publicProcedure.input(forgotPasswordSchema).mutation(async () => {
+  forgotPassword: publicProcedure.input(forgotPasswordSchema).mutation(async ({ ctx }) => {
     try {
       const mockToken = nanoid()
-      return createSuccessResponse('Password reset link has been sent to your email', { token: mockToken }, 200)
+      return createSuccessResponse(
+        'Password reset link has been sent to your email',
+        { token: mockToken },
+        200,
+        ctx.transactionId
+      )
     } catch (error) {
-      throw handleError(error)
+      throw handleError(error, { transactionId: ctx.transactionId })
     }
   }),
 
-  resetPassword: publicProcedure.input(resetPasswordSchema).mutation(async ({ input }) => {
+  resetPassword: publicProcedure.input(resetPasswordSchema).mutation(async ({ input, ctx }) => {
     try {
       const hashedPassword = await hash(input.password)
       await useDrizzle().update(usersTable).set({ password: hashedPassword }).where(eq(usersTable.id, input.token))
 
-      return createSuccessResponse('Password has been reset successfully', undefined, 200)
+      return createSuccessResponse('Password has been reset successfully', undefined, 200, ctx.transactionId)
     } catch (error) {
-      throw handleError(error)
+      throw handleError(error, { transactionId: ctx.transactionId })
     }
   }),
 
@@ -208,7 +214,6 @@ export const authRouter = router({
       const refresh_token = getCookie(ctx.event, COOK_REFRESH_TOKEN) || ''
       const decoded = await verifyRefreshJWT(refresh_token)
 
-      // Verify token exists and update last used
       const storedToken = await findRefreshToken(refresh_token)
       if (!storedToken) {
         throw new AuthError(INVALID_REFRESH_TOKEN)
@@ -270,7 +275,8 @@ export const authRouter = router({
         {
           token: { accessToken, refreshToken },
         },
-        200
+        200,
+        ctx.transactionId
       )
     } catch (error) {
       deleteCookie(ctx.event, COOK_ACCESS_TOKEN)
@@ -288,7 +294,7 @@ export const authRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       await cleanupUnusedTokens(ctx.user.id, input.unusedDays)
-      return createSuccessResponse('Unused tokens cleaned up successfully', undefined, 200)
+      return createSuccessResponse('Unused tokens cleaned up successfully', undefined, 200, ctx.transactionId)
     }),
 
   changePassword: protectedProcedure.input(changePasswordSchema).mutation(async ({ input, ctx }) => {
@@ -307,9 +313,9 @@ export const authRouter = router({
       const newHashedPassword = await hash(input.newPassword)
       await useDrizzle().update(usersTable).set({ password: newHashedPassword }).where(eq(usersTable.id, ctx.user.id))
 
-      return createSuccessResponse('Password changed successfully', undefined, 200)
+      return createSuccessResponse('Password changed successfully', undefined, 200, ctx.transactionId)
     } catch (error) {
-      throw handleError(error)
+      throw handleError(error, { transactionId: ctx.transactionId })
     }
   }),
 
@@ -320,12 +326,13 @@ export const authRouter = router({
       {
         sessions: sessions.map((s) => s.device_info),
       },
-      200
+      200,
+      ctx.transactionId
     )
   }),
 
   logoutAll: protectedProcedure.mutation(async ({ ctx }) => {
     await deactivateUserTokens(ctx.user.id)
-    return createSuccessResponse('Logged out from all devices', undefined, 200)
+    return createSuccessResponse('Logged out from all devices', undefined, 200, ctx.transactionId)
   }),
 })

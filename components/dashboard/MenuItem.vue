@@ -34,17 +34,19 @@ onClickOutside(itemRef, () => {
           'flex items-center px-6 py-3 text-gray-600 dark:text-gray-300',
           'relative cursor-pointer overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-700/50',
           'transform-gpu transition-all duration-300 ease-in-out',
-          isExpanded || isMobile ? 'space-x-3' : 'justify-center'
+          isExpanded || isMobile ? 'gap-x-3' : 'justify-center'
         )
       "
     >
       <Icon :name="item.icon" class="h-5 w-5 flex-shrink-0 transition-transform duration-300" />
       <span
         class="origin-left transform-gpu truncate"
-        :class="[
-          isExpanded || isMobile ? 'scale-100 opacity-100' : 'scale-0 opacity-0',
-          'transition-all duration-300 ease-in-out',
-        ]"
+        :class="
+          cn(
+            isExpanded || isMobile ? 'scale-100 opacity-100' : 'scale-0 opacity-0',
+            'transition-all duration-300 ease-in-out'
+          )
+        "
       >
         {{ item.label }}
       </span>
@@ -56,7 +58,7 @@ onClickOutside(itemRef, () => {
           'flex items-center px-6 py-3 text-gray-600 dark:text-gray-300',
           'relative cursor-pointer overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-700/50',
           'transform-gpu transition-all duration-300 ease-in-out',
-          isExpanded || isMobile ? 'space-x-3' : 'justify-center'
+          isExpanded || isMobile ? 'gap-x-3' : 'justify-center'
         )
       "
       @click="item.subMenu ? emit('toggle') : null"
@@ -65,7 +67,7 @@ onClickOutside(itemRef, () => {
         class="flex w-full min-w-0 items-center transition-all duration-300 ease-in-out"
         :class="isExpanded || isMobile ? 'justify-between' : 'justify-center'"
       >
-        <div class="flex min-w-0 items-center space-x-3">
+        <div class="flex min-w-0 items-center gap-x-3">
           <Icon :name="item.icon" class="h-5 w-5 flex-shrink-0 transition-transform duration-300" />
           <span
             class="origin-left transform-gpu truncate"

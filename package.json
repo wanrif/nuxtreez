@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "nuxt dev --dotenv .env.local",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
@@ -14,8 +14,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:seed": "server/database/seeders/index.ts",
-    "db:setup": "yarn db:push && yarn db:seed"
+    "db:seed": "tsx server/database/seeders/index.ts",
+    "db:setup": "db:push && db:seed"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
@@ -26,10 +26,9 @@
     "@vee-validate/zod": "^4.15.0",
     "clsx": "2.1.1",
     "drizzle-orm": "^0.38.3",
-    "eslint": "^9.17.0",
+    "eslint": "^9.18.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.12.0",
-    "nanoid": "5.0.8",
     "nanoid-dictionary": "^5.0.0-beta.1",
     "nuxt": "^3.15.1",
     "superjson": "2.2.1",
@@ -38,6 +37,7 @@
     "ua-parser-js": "^2.0.0",
     "vue": "latest",
     "vue-router": "latest",
+    "winston": "^3.17.0",
     "zipson": "0.2.12",
     "zod": "^3.24.1"
   },
@@ -57,10 +57,12 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-prettier-vue": "^5.0.0",
+    "nanoid": "5.0.9",
     "nuxt-security": "^2.1.5",
     "pinia-plugin-persistedstate": "^4.2.0",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vue-tsc": "^2.2.0"
   }

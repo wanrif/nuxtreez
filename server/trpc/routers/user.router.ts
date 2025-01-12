@@ -56,7 +56,7 @@ export const userRouter = router({
           : null,
       }
 
-      return createSuccessResponse<UserResponse>('Profile fetched successfully', { user })
+      return createSuccessResponse<UserResponse>('Profile fetched successfully', { user }, 200, ctx.transactionId)
     } catch (error) {
       throw handleError(error)
     }
@@ -140,7 +140,7 @@ export const userRouter = router({
             : null,
         }
 
-        return createSuccessResponse<UserResponse>('Profile updated successfully', { user })
+        return createSuccessResponse<UserResponse>('Profile updated successfully', { user }, 200, ctx.transactionId)
       } catch (error) {
         console.error(error)
         throw handleError(error)

@@ -9,13 +9,14 @@
 import SuperJSON from 'superjson'
 import { createTRPCNuxtClient, httpBatchLink, httpLink } from 'trpc-nuxt/client'
 
-import { FAIL_REFRESH_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
+import { INVALID_REFRESH_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED } from '~/constant/jwt'
 import type { AppRouter } from '~/server/trpc/router'
 
 export default defineNuxtPlugin(() => {
   const headers = useRequestHeaders()
   const { csrf } = useCsrf()
   const authStore = useAuthStore()
+  const transactionId = generateTransactionId()
 
   // Helper function to handle token refresh
   const handleTokenRefresh = async (isBatch: boolean): Promise<string | null> => {
@@ -74,7 +75,7 @@ export default defineNuxtPlugin(() => {
         }
 
         // Handle invalid token or failed refresh
-        if (errorMessage === INVALID_TOKEN || errorMessage === FAIL_REFRESH_TOKEN) {
+        if (errorMessage === INVALID_TOKEN || errorMessage === INVALID_REFRESH_TOKEN) {
           authStore.$reset()
           navigateTo('/login')
         }
@@ -95,6 +96,7 @@ export default defineNuxtPlugin(() => {
           return {
             ...headers,
             'x-csrf-token': csrf,
+            'x-transaction-id': transactionId,
             // authorization: accessToken ? `Bearer ${accessToken}` : '',
           }
         },

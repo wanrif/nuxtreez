@@ -4,11 +4,13 @@ import mysql from 'mysql2/promise'
 
 import schema from '~/server/database/schema'
 
+import { handleError, logger } from './response'
+
 export { sql, eq, ne, and, or, gt, lt } from 'drizzle-orm'
 
 let connection: mysql.Pool | null = null
 
-function createConnection() {
+function createConnection(): mysql.Pool | null {
   try {
     const config: mysql.PoolOptions = {
       host: process.env.MYSQL_HOST?.split(':')[0],
@@ -24,16 +26,42 @@ function createConnection() {
       config.password = process.env.MYSQL_PASSWORD
     }
 
-    return mysql.createPool(config)
+    const pool = mysql.createPool(config)
+
+    // Test the connection
+    pool.getConnection().catch((error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      logger.error('MySQL Connection Test Failed', {
+        code: 'MYSQL_CONNECTION_TEST_FAILED',
+        cause: {
+          host: process.env.MYSQL_HOST,
+          database: process.env.MYSQL_DATABASE,
+          error: {
+            message: errorMessage,
+            code: error.code,
+            errno: error.errno,
+            syscall: error.syscall,
+            address: error.address,
+            port: error.port,
+          },
+        },
+      })
+      throw error
+    })
+
+    return pool
   } catch (error) {
-    console.error('Failed to create MySQL connection:', error)
-    throw error
+    handleError(error)
+    return null
   }
 }
 
 export function useDrizzle() {
   if (!connection) {
     connection = createConnection()
+  }
+  if (!connection) {
+    throw new Error('Failed to create MySQL connection')
   }
   return drizzle(connection, { schema, mode: 'default' })
 }

@@ -1,12 +1,13 @@
 export const useSidebar = () => {
-  const isSidebarExpanded = ref(true)
+  const store = useMyAppStore()
+  const { isSidebarExpanded } = storeToRefs(store)
   const isMobileMenuOpen = ref(false)
   const isMobile = ref(false)
   const activeSubmenu = ref<string | null>(null)
 
   const toggleSidebar = () => {
     if (!isMobile.value) {
-      isSidebarExpanded.value = !isSidebarExpanded.value
+      store.toggleSidebar()
     }
   }
 
