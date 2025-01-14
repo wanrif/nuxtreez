@@ -7,21 +7,23 @@ import { generateTransactionId } from '~/utils/commonHelper.ts'
 
 const format = winston.format
 
-const myFormat = format.printf(({ level, message, transactionId, label, code, statusCode, cause, timestamp }) => {
-  let coloredLevel = chalk.white(level.toUpperCase())
-  switch (level) {
-    case 'error':
-      coloredLevel = chalk.red(level.toUpperCase())
-      break
-    case 'warn':
-      coloredLevel = chalk.yellow(level.toUpperCase())
-      break
-    case 'info':
-      coloredLevel = chalk.blueBright(level.toUpperCase())
-      break
+const myFormat = format.printf(
+  ({ level, message, transactionId, label, code, statusCode, cause, timestamp, zodErrors }) => {
+    let coloredLevel = chalk.white(level.toUpperCase())
+    switch (level) {
+      case 'error':
+        coloredLevel = chalk.red(level.toUpperCase())
+        break
+      case 'warn':
+        coloredLevel = chalk.yellow(level.toUpperCase())
+        break
+      case 'info':
+        coloredLevel = chalk.blueBright(level.toUpperCase())
+        break
+    }
+    return `${chalk.gray(timestamp)} [${chalk.magentaBright(label)}] ${transactionId ?? generateTransactionId()} ${coloredLevel}: ${code ? `(${chalk.cyan(code)})` : ''} ${statusCode ? `(${chalk.green(statusCode)})` : ''} ${message} ${cause ? `Cause: ${chalk.red(JSON.stringify(cause))}` : ''} ${zodErrors ? `Zod errors: ${chalk.red(JSON.stringify(zodErrors))}` : ''}`
   }
-  return `${chalk.gray(timestamp)} [${chalk.magentaBright(label)}] ${transactionId ?? generateTransactionId()} ${coloredLevel}: ${code ? `(${chalk.cyan(code)})` : ''} ${message} ${statusCode ? `(${chalk.green(statusCode)})` : ''} ${cause ? `Cause: ${chalk.red(JSON.stringify(cause))}` : ''}`
-})
+)
 
 export const logger = winston.createLogger({
   format: format.combine(
@@ -48,7 +50,7 @@ export function createSuccessResponse<T>(
   statusCode: number = 200,
   transactionId?: string
 ): SuccessResponse<T> {
-  logger.info(message, { data, transactionId })
+  logger.info(message, { data, transactionId, code: 'SUCCESS', statusCode })
 
   return {
     status: 'success',
@@ -128,7 +130,13 @@ export function handleError(error: unknown, ctx?: { transactionId: string }) {
   }
 
   if (error instanceof ValidationError) {
-    logger.warn('Validation error:', { message: error.message, errors: error.cause, transactionId: ctx?.transactionId })
+    logger.warn('Validation error:', {
+      message: error.message,
+      cause: error.cause,
+      code: error.code,
+      statusCode: 400,
+      transactionId: ctx?.transactionId,
+    })
 
     throw new TRPCError({
       code: 'BAD_REQUEST',
@@ -163,8 +171,9 @@ export function handleError(error: unknown, ctx?: { transactionId: string }) {
 
     const statusCode = statusCodeMap[error.code]
 
-    logger.error('TRPC error:', {
+    logger.warn('TRPC error:', {
       message: error.message,
+      cause: error.cause,
       code: error.code,
       statusCode,
       transactionId: ctx?.transactionId,

@@ -47,7 +47,7 @@ const getStatusColor = (status: string) => {
             v-model="searchQuery"
             type="text"
             placeholder="Search users..."
-            class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:focus:ring-blue-600"
+            class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:focus:ring-blue-600"
           />
         </div>
       </div>

@@ -26,7 +26,6 @@ import { rolesTable } from '~/server/database/schema/role'
 import { usersTable } from '~/server/database/schema/user'
 import type { IUser } from '~/types'
 
-import { logger } from '../utils/response'
 import type { Context } from './context'
 
 interface Meta {
@@ -40,13 +39,17 @@ const t = initTRPC
     defaultMeta: { authRequired: false },
     errorFormatter: (opts) => {
       const { shape, error, ctx } = opts
-      logger.log({
-        level: 'error',
-        message: JSON.stringify(error.message),
-        code: error.code,
-        cause: error.code === 'BAD_REQUEST' && error.cause instanceof ZodError ? error.cause.flatten() : null,
-        transactionId: ctx?.transactionId,
-      })
+
+      if (error.cause instanceof ZodError) {
+        logger.warn('Validation error:', {
+          message: error.message,
+          code: error.code,
+          zodErrors: error.cause.flatten(),
+          statusCode: shape.data.httpStatus,
+          transactionId: ctx?.transactionId,
+        })
+      }
+
       return {
         ...shape,
         data: {

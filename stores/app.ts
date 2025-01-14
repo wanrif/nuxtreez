@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { parse, stringify } from 'zipson/lib'
+import { parse, stringify } from 'zipson'
 
 export const useMyAppStore = defineStore('app', {
   state: () => ({
