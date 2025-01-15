@@ -84,7 +84,9 @@ export default defineNuxtPlugin(() => {
       return response
     } catch (error) {
       console.error('API request failed:', error instanceof Error ? error.message : 'Unknown error')
-      throw error
+      throw createError({
+        message: 'API request failed',
+      })
     }
   }
 

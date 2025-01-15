@@ -140,14 +140,14 @@ export const authRouter = router({
 
   register: publicProcedure.input(registerSchema).mutation(async ({ input, ctx }) => {
     try {
-      const existingUser = await useDrizzle()
+      const [existingUser] = await useDrizzle()
         .select()
         .from(usersTable)
         .where(eq(usersTable.email, input.email))
         .limit(1)
 
-      if (existingUser.length) {
-        throw new ValidationError('Registration failed', {
+      if (existingUser) {
+        throw new ValidationError('Registration failed, email already registered', {
           email: ['Email already registered'],
         })
       }
