@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { eq } from 'drizzle-orm'
 
+import { faker } from '@faker-js/faker'
 import { hash } from '@node-rs/argon2'
 
 import { useDrizzle } from '~/server/utils/drizzle'
@@ -8,7 +9,7 @@ import { useDrizzle } from '~/server/utils/drizzle'
 import { rolesTable } from '../schema/role'
 import { usersTable } from '../schema/user'
 
-const users = [
+const defaultUsers = [
   {
     name: 'Admin User',
     email: 'admin@nuxtreez.com',
@@ -28,6 +29,16 @@ const users = [
     role: 'guest',
   },
 ]
+
+// Generate 100 random users
+const randomUsers = Array.from({ length: 100 }, () => ({
+  name: faker.person.fullName(),
+  email: faker.internet.email(),
+  password: 'Pa$$w0rd!',
+  role: faker.helpers.arrayElement(['user', 'guest']), // Only regular users and guests
+}))
+
+const users = [...defaultUsers, ...randomUsers]
 
 export async function seedUsers() {
   const db = useDrizzle()

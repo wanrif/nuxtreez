@@ -13,10 +13,7 @@ type UserResponse = {
 export const userRouter = router({
   profile: protectedProcedure.query(async ({ ctx }) => {
     try {
-      const encryptedId = encryptHelper.encrypt(ctx.user.id, 'base64')
-      const encryptedRoleId = encryptHelper.encrypt(ctx.user.role?.id ?? '', 'base64')
-
-      const findUser = await useDrizzle()
+      const prepared = useDrizzle()
         .select({
           users: {
             id: usersTable.id,
@@ -36,9 +33,15 @@ export const userRouter = router({
         .from(usersTable)
         .leftJoin(rolesTable, eq(usersTable.role_id, rolesTable.id))
         .where(eq(usersTable.id, ctx.user.id))
-        .then((rows) => rows[0])
+        .limit(1)
+        .prepare()
+
+      const findUser = await prepared.execute().then((rows) => rows[0])
 
       if (!findUser) throw new NotFoundError('User not found')
+
+      const encryptedId = encryptHelper.encrypt(ctx.user.id, 'base64')
+      const encryptedRoleId = encryptHelper.encrypt(ctx.user.role?.id ?? '', 'base64')
 
       const user: IUser = {
         id: encryptedId,
@@ -92,7 +95,7 @@ export const userRouter = router({
           .set({
             name: input.name,
             email: input.email,
-            updated_at: new Date(),
+            updated_at: sql`NOW()`,
             phone: input.phone,
             location: input.location,
             website: input.website,

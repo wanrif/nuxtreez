@@ -123,7 +123,7 @@ export default defineNuxtConfig({
       interval: 300000, // 5 Minutes
       headers: true, // Enable headers to help clients track their rate limit, default false
       driver: {
-        name: 'memory', // 'memory' is more efficient than 'lruCache' for small-medium apps
+        name: 'lru-cache', // 'memory' is more efficient than 'lruCache' for small-medium apps
       },
       throwError: true,
     },
@@ -175,6 +175,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     jwtSecretKey: process.env.NUXT_JWT_SECRET_KEY,
     jwtRefreshSecretKey: process.env.NUXT_JWT_REFRESH_SECRET_KEY,
+    databaseUrl: process.env.NUXT_DATABASE_URL,
+    mysqlHost: process.env.NUXT_MYSQL_HOST,
+    mysqlPort: process.env.NUXT_MYSQL_PORT,
+    mysqlUser: process.env.NUXT_MYSQL_USER,
+    mysqlPassword: process.env.NUXT_MYSQL_PASSWORD,
+    mysqlDatabase: process.env.NUXT_MYSQL_DATABASE,
     encryptionAlgorithm: process.env.NUXT_ENCRYPTION_ALGORITHM,
     encryptionPassword: process.env.NUXT_ENCRYPTION_PASSWORD,
     public: {

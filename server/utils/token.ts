@@ -12,16 +12,24 @@ export const storeRefreshToken = async (userId: string, token: string, expiresAt
 }
 
 export const deleteRefreshToken = async (token: string) => {
-  await useDrizzle().delete(tokensTable).where(eq(tokensTable.token, token))
+  const prepared = useDrizzle().delete(tokensTable).where(eq(tokensTable.token, token)).prepare()
+  await prepared.execute()
 }
 
 export const findRefreshToken = async (token: string) => {
-  const [result] = await useDrizzle().select().from(tokensTable).where(eq(tokensTable.token, token)).limit(1)
+  const prepared = useDrizzle().select().from(tokensTable).where(eq(tokensTable.token, token)).limit(1).prepare()
+  const [result] = await prepared.execute()
   return result
 }
 
 export const updateTokenLastUsed = async (token: string) => {
-  await useDrizzle().update(tokensTable).set({ last_used: new Date() }).where(eq(tokensTable.token, token))
+  const prepared = useDrizzle()
+    .update(tokensTable)
+    .set({ last_used: sql`NOW()` })
+    .where(eq(tokensTable.token, token))
+    .prepare()
+
+  await prepared.execute()
 }
 
 export const deactivateUserTokens = async (userId: string, exceptToken?: string) => {

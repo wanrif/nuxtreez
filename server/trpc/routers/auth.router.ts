@@ -76,7 +76,7 @@ const changePasswordSchema = z
 export const authRouter = router({
   login: publicProcedure.input(loginSchema).mutation(async ({ input, ctx }) => {
     try {
-      const [user] = await useDrizzle()
+      const user = await useDrizzle()
         .select({
           id: usersTable.id,
           email: usersTable.email,
@@ -90,6 +90,9 @@ export const authRouter = router({
         .innerJoin(rolesTable, eq(usersTable.role_id, rolesTable.id))
         .where(eq(usersTable.email, input.email))
         .limit(1)
+        .prepare()
+        .execute()
+        .then((rows) => rows[0])
 
       if (!user) throw new BusinessError('Invalid email or password')
 
@@ -140,11 +143,16 @@ export const authRouter = router({
 
   register: publicProcedure.input(registerSchema).mutation(async ({ input, ctx }) => {
     try {
-      const [existingUser] = await useDrizzle()
-        .select()
+      const prepareExisting = useDrizzle()
+        .select({
+          email: usersTable.email,
+        })
         .from(usersTable)
         .where(eq(usersTable.email, input.email))
         .limit(1)
+        .prepare()
+
+      const [existingUser] = await prepareExisting.execute()
 
       if (existingUser) {
         throw new ValidationError('Registration failed, email already registered', {
@@ -225,7 +233,7 @@ export const authRouter = router({
       // Delete old refresh token
       await deleteRefreshToken(refresh_token)
 
-      const [user] = await useDrizzle()
+      const prepared = useDrizzle()
         .select({
           id: usersTable.id,
           email: usersTable.email,
@@ -238,6 +246,9 @@ export const authRouter = router({
         .innerJoin(rolesTable, eq(usersTable.role_id, rolesTable.id))
         .where(eq(usersTable.id, decoded.id))
         .limit(1)
+        .prepare()
+
+      const [user] = await prepared.execute()
 
       if (!user) {
         throw new AuthError(INVALID_USER_REFRESH_TOKEN)

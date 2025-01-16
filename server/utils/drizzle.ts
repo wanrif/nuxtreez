@@ -13,10 +13,10 @@ let connection: mysql.Pool | null = null
 function createConnection(): mysql.Pool | null {
   try {
     const config: mysql.PoolOptions = {
-      host: process.env.MYSQL_HOST?.split(':')[0],
-      port: parseInt(process.env.MYSQL_HOST?.split(':')[1] || '3306'),
-      user: process.env.MYSQL_USER,
-      database: process.env.MYSQL_DATABASE,
+      host: process.env.NUXT_MYSQL_HOST,
+      port: Number(process.env.NUXT_MYSQL_PORT),
+      user: process.env.NUXT_MYSQL_USER,
+      database: process.env.NUXT_MYSQL_DATABASE,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,

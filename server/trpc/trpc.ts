@@ -10,10 +10,11 @@
 import { eq } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import jwt from 'jsonwebtoken'
+import { LRUCache } from 'lru-cache'
 import SuperJSON from 'superjson'
 import { ZodError } from 'zod'
 
-import { initTRPC } from '@trpc/server'
+import { TRPCError, initTRPC } from '@trpc/server'
 
 import {
   COOK_ACCESS_TOKEN,
@@ -66,20 +67,31 @@ export const router = t.router
 export const publicProcedure = t.procedure
 export const middleware = t.middleware
 
-// Add a simple cache for user data
-const userCache = new Map<string, { user: IUser; timestamp: number }>()
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+// Replace simple Map with LRU Cache for better memory management
+const userCache = new LRUCache<string, { user: IUser; timestamp: number }>({
+  max: 500, // Maximum number of items
+  ttl: 5 * 60 * 1000, // 5 minutes TTL
+  updateAgeOnGet: true,
+})
+
+// Cache for JWT verification results
+interface JWTPayload {
+  id: string
+  [key: string]: unknown
+}
+
+const tokenVerificationCache = new LRUCache<string, JWTPayload>({
+  max: 1000,
+  ttl: 60 * 1000, // 1 minute TTL
+})
 
 const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
   const access_token = getCookie(event, COOK_ACCESS_TOKEN)
   const refresh_token = getCookie(event, COOK_REFRESH_TOKEN)
 
-  // Check cache first if access token exists
   if (access_token) {
     const cached = userCache.get(access_token)
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return cached.user
-    }
+    if (cached) return cached.user
   }
 
   // Rest of the token refresh logic
@@ -114,7 +126,13 @@ const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
   }
 
   try {
-    const decoded = await verifyJWT(access_token)
+    // Cache JWT verification results
+    let decoded = tokenVerificationCache.get(access_token)
+    if (!decoded) {
+      decoded = await verifyJWT(access_token)
+      tokenVerificationCache.set(access_token, decoded)
+    }
+
     const user = await getUserFromDB(decoded.id)
     if (user) {
       userCache.set(access_token, { user, timestamp: Date.now() })
@@ -128,9 +146,8 @@ const getUserFromHeader = async (event: H3Event): Promise<IUser | null> => {
   }
 }
 
-// Optimize database query with a separate function
 const getUserFromDB = async (userId: string): Promise<IUser | null> => {
-  const [user] = await useDrizzle()
+  const prepare = useDrizzle()
     .select({
       id: usersTable.id,
       email: usersTable.email,
@@ -144,7 +161,10 @@ const getUserFromDB = async (userId: string): Promise<IUser | null> => {
     .innerJoin(rolesTable, eq(usersTable.role_id, rolesTable.id))
     .where(eq(usersTable.id, userId))
     .limit(1)
+    .$dynamic()
+    .prepare()
 
+  const [user] = await prepare.execute()
   return user ?? null
 }
 
@@ -154,8 +174,12 @@ const clearAuthCookies = (event: H3Event) => {
   deleteCookie(event, COOK_REFRESH_TOKEN)
 }
 
-// Memoize role checking
-const roleCheckCache = new Map<string, boolean>()
+// Implement role checking with LRU cache
+const roleCheckCache = new LRUCache<string, boolean>({
+  max: 1000,
+  ttl: 30 * 60 * 1000, // 30 minutes TTL
+})
+
 const createAuthMiddleware = (requiredRole?: string) => {
   return middleware(async ({ ctx, next }) => {
     const user = await getUserFromHeader(ctx.event)
@@ -182,6 +206,29 @@ const createAuthMiddleware = (requiredRole?: string) => {
   })
 }
 
-export const protectedProcedure = t.procedure.meta({ authRequired: true }).use(createAuthMiddleware())
+// Add rate limiting middleware
+const rateLimiter = new LRUCache<string, number>({
+  max: 10000,
+  ttl: 60 * 1000, // 1 minute window
+})
 
-export const adminProcedure = t.procedure.meta({ authRequired: true }).use(createAuthMiddleware('ADMIN'))
+const rateLimit = middleware(async ({ ctx, next }) => {
+  const ip = ctx.event.node.req.socket.remoteAddress || ''
+  const current = rateLimiter.get(ip) || 0
+
+  if (current > 100) {
+    // 100 requests per minute
+    throw new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Rate limit exceeded',
+    })
+  }
+
+  rateLimiter.set(ip, current + 1)
+  return next()
+})
+
+// Apply rate limiting to protected routes
+export const protectedProcedure = t.procedure.meta({ authRequired: true }).use(rateLimit).use(createAuthMiddleware())
+
+export const adminProcedure = t.procedure.meta({ authRequired: true }).use(rateLimit).use(createAuthMiddleware('ADMIN'))
