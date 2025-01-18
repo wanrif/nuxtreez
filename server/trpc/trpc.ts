@@ -10,7 +10,7 @@
 import { eq } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import jwt from 'jsonwebtoken'
-import { LRUCache } from 'lru-cache'
+import LRUCache from 'lru-cache'
 import SuperJSON from 'superjson'
 import { ZodError } from 'zod'
 
