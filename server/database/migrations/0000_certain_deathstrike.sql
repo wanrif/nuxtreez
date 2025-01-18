@@ -9,7 +9,7 @@ CREATE TABLE `roles` (
 --> statement-breakpoint
 CREATE TABLE `tokens` (
 	`id` varchar(32) NOT NULL,
-	`token` varchar(255) NOT NULL,
+	`token` varchar(512) NOT NULL,
 	`user_id` varchar(32) NOT NULL,
 	`device_info` json NOT NULL,
 	`is_active` boolean NOT NULL DEFAULT true,
@@ -35,3 +35,10 @@ CREATE TABLE `users` (
 	CONSTRAINT `users_email_unique` UNIQUE(`email`),
 	CONSTRAINT `users_phone_unique` UNIQUE(`phone`)
 );
+--> statement-breakpoint
+CREATE INDEX `name_idx` ON `roles` (`name`);--> statement-breakpoint
+CREATE INDEX `token_idx` ON `tokens` (`token`);--> statement-breakpoint
+CREATE INDEX `user_id_idx` ON `tokens` (`user_id`);--> statement-breakpoint
+CREATE INDEX `email_idx` ON `users` (`email`);--> statement-breakpoint
+CREATE INDEX `phone_idx` ON `users` (`phone`);--> statement-breakpoint
+CREATE INDEX `role_id_idx` ON `users` (`role_id`);

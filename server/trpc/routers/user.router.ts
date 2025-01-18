@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 import { rolesTable, usersTable } from '~/server/database/schema'
-import { encryptHelper } from '~/server/utils/enryptionHelper'
 import type { IUser } from '~/types'
 
 import { protectedProcedure, router } from '../trpc'
@@ -85,7 +84,7 @@ export const userRouter = router({
           throw new ValidationError('No updates provided')
         }
 
-        const decryptedId = encryptHelper.decrypt(input.id!, 'base64')
+        const decryptedId = await encryptHelper.decrypt(input.id!, 'base64')
         if (decryptedId !== ctx.user.id) {
           throw new ForbiddenError('You do not have permission to update this user')
         }

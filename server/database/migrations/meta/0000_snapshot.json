@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "f8ec2f42-444f-41f1-9358-d9323849aa55",
+  "id": "9b163e6c-c65d-4609-b131-f101d21a81f2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "roles": {
@@ -39,7 +39,16 @@
           "default": "(now())"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "name_idx": {
+          "name": "name_idx",
+          "columns": [
+            "name"
+          ],
+          "isUnique": false,
+          "using": "btree"
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "roles_id": {
@@ -71,7 +80,7 @@
         },
         "token": {
           "name": "token",
-          "type": "varchar(255)",
+          "type": "varchar(512)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -122,7 +131,23 @@
           "default": "(now())"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "token_idx": {
+          "name": "token_idx",
+          "columns": [
+            "token"
+          ],
+          "isUnique": false,
+          "using": "btree"
+        },
+        "user_id_idx": {
+          "name": "user_id_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "tokens_id": {
@@ -219,7 +244,32 @@
           "default": "(now())"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "email_idx": {
+          "name": "email_idx",
+          "columns": [
+            "email"
+          ],
+          "isUnique": false,
+          "using": "btree"
+        },
+        "phone_idx": {
+          "name": "phone_idx",
+          "columns": [
+            "phone"
+          ],
+          "isUnique": false,
+          "using": "btree"
+        },
+        "role_id_idx": {
+          "name": "role_id_idx",
+          "columns": [
+            "role_id"
+          ],
+          "isUnique": false,
+          "using": "btree"
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "users_id": {
