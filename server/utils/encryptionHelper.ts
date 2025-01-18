@@ -71,7 +71,15 @@ class CryptoHelper {
   }
 
   private validateAlgorithm(algorithm: string): string {
-    const validAlgorithms = ['aes-128-gcm', 'aes-192-gcm', 'aes-256-gcm', 'aes-128-ccm', 'aes-192-ccm', 'aes-256-ccm']
+    const validAlgorithms = [
+      'aes-128-gcm',
+      'aes-192-gcm',
+      'aes-256-gcm',
+      'aes-128-ccm',
+      'aes-192-ccm',
+      'aes-256-ccm',
+      'chacha20-poly1305',
+    ]
     if (!validAlgorithms.includes(algorithm)) {
       throw new Error(`Unsupported algorithm: ${algorithm}`)
     }
@@ -88,6 +96,7 @@ class CryptoHelper {
         return 24 // 192 bits = 24 bytes
       case 'aes-256-gcm':
       case 'aes-256-ccm':
+      case 'chacha20-poly1305':
         return 32 // 256 bits = 32 bytes
       default:
         throw new Error(`Unsupported algorithm: ${algorithm}`)
@@ -104,6 +113,8 @@ class CryptoHelper {
       case 'aes-192-ccm':
       case 'aes-256-ccm':
         return 12 // Recommended IV length for GCM and CCM modes
+      case 'chacha20-poly1305':
+        return 12 // ChaCha20-Poly1305 requires 12-byte nonce
       default:
         throw new Error(`Unsupported algorithm: ${algorithm}`)
     }
@@ -121,8 +132,14 @@ class CryptoHelper {
     // Check if IV is valid hex
     if (!/^[0-9a-fA-F]+$/.test(parts[0])) return false
 
-    // IV length should match algorithm requirement
+    // IV length should match algorithm requirement (24 hex chars = 12 bytes)
     if (parts[0].length !== this.ivLength * 2) return false
+
+    // For ChaCha20-Poly1305, additional validation
+    if (this.algorithm === 'chacha20-poly1305') {
+      // Auth tag must be 32 hex chars (16 bytes) for ChaCha20-Poly1305
+      if (parts[1].length !== 32) return false
+    }
 
     return true
   }
@@ -131,23 +148,21 @@ class CryptoHelper {
     try {
       if (!payload) throw new Error('Payload cannot be empty')
 
-      const iv = Buffer.alloc(this.ivLength)
-      randomBytes(this.ivLength).copy(iv)
+      const iv = randomBytes(this.ivLength)
 
-      const cipher = this.algorithm.includes('ccm')
-        ? createCipheriv(this.algorithm as CipherCCMTypes, this.key, iv, {
-            authTagLength: this.getAuthTagLength(this.algorithm),
-          })
-        : createCipheriv(this.algorithm as CipherGCMTypes, this.key, iv)
+      const cipher =
+        this.algorithm === 'chacha20-poly1305'
+          ? createCipheriv('chacha20-poly1305', this.key, iv)
+          : this.algorithm.includes('ccm')
+            ? createCipheriv(this.algorithm as CipherCCMTypes, this.key, iv, {
+                authTagLength: this.getAuthTagLength(this.algorithm),
+              })
+            : createCipheriv(this.algorithm as CipherGCMTypes, this.key, iv)
 
       const encryptedBuffer = Buffer.concat([cipher.update(Buffer.from(payload, 'utf8')), cipher.final()])
+      const authTag = (cipher as CipherGCM | CipherCCM).getAuthTag()
 
-      const result =
-        this.algorithm.includes('gcm') || this.algorithm.includes('ccm')
-          ? `${iv.toString('hex')}:${(cipher as CipherGCM | CipherCCM)
-              .getAuthTag()
-              .toString(outputFormat)}:${encryptedBuffer.toString(outputFormat)}`
-          : `${iv.toString('hex')}:${encryptedBuffer.toString(outputFormat)}`
+      const result = `${iv.toString('hex')}:${authTag.toString('hex')}:${encryptedBuffer.toString(outputFormat)}`
 
       // Clean up sensitive data
       encryptedBuffer.fill(0)
@@ -167,32 +182,24 @@ class CryptoHelper {
           throw new Error('Invalid encrypted payload format')
         }
 
-        const parts = encryptedPayload.split(':')
-        const iv = Buffer.from(parts[0], 'hex')
+        const [ivHex, authTagHex, encryptedData] = encryptedPayload.split(':')
+        const iv = Buffer.from(ivHex, 'hex')
+        const authTag = Buffer.from(authTagHex, 'hex')
 
-        // Verify IV length
-        if (iv.length !== this.ivLength) {
-          throw new Error('Invalid IV length')
-        }
-
-        const decipher = this.algorithm.includes('ccm')
-          ? createDecipheriv(this.algorithm as CipherCCMTypes, this.key, iv, {
-              authTagLength: this.getAuthTagLength(this.algorithm),
-            })
-          : createDecipheriv(this.algorithm as CipherGCMTypes, this.key, iv)
-
-        const authTag = Buffer.from(parts[1], inputFormat)
-        const encrypted = Buffer.from(parts[2], inputFormat)
-
-        // Verify auth tag
-        if (authTag.length !== this.getAuthTagLength(this.algorithm)) {
-          throw new Error('Invalid auth tag length')
-        }
+        const decipher =
+          this.algorithm === 'chacha20-poly1305'
+            ? createDecipheriv('chacha20-poly1305', this.key, iv)
+            : this.algorithm.includes('ccm')
+              ? createDecipheriv(this.algorithm as CipherCCMTypes, this.key, iv, {
+                  authTagLength: this.getAuthTagLength(this.algorithm),
+                })
+              : createDecipheriv(this.algorithm as CipherGCMTypes, this.key, iv)
 
         ;(decipher as DecipherGCM | DecipherCCM).setAuthTag(authTag)
+        const encrypted = Buffer.from(encryptedData, inputFormat)
         const result = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8')
-        encrypted.fill(0)
 
+        encrypted.fill(0)
         return result
       } catch (error) {
         lastError = error as Error
@@ -238,3 +245,4 @@ const createSingletonHelper = (password: string, algorithm: string) => {
 export const encryptHelper = createSingletonHelper(password, 'aes-256-gcm')()
 export const encryptHelperCCM = createSingletonHelper(password, 'aes-128-ccm')()
 export const encryptHelper192 = createSingletonHelper(password, 'aes-192-gcm')()
+export const encryptHelperChaCha = createSingletonHelper(password, 'chacha20-poly1305')()

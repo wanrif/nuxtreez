@@ -16,7 +16,9 @@ useHead({
 
 const { t } = useI18n()
 const route = useRoute()
-const token = route.params.token as string
+const rawToken = route.query.token as string
+// Ensure token is properly handled whether it's encoded or decoded
+const token = decodeURIComponent(rawToken)
 const { fields, errors, isSubmitting, meta, error, success, submit } = useResetPasswordForm(token)
 const mounted = ref(false)
 

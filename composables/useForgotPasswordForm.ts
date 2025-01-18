@@ -32,8 +32,7 @@ export const useForgotPasswordForm = () => {
       error.value = ''
       await auth.forgotPassword(values.email)
       success.value = true
-    } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'Unknown error'
+    } catch {
       error.value = t('forgot_password_failed')
     }
   })

@@ -1,7 +1,7 @@
-import { nanoid } from 'nanoid'
 import { z } from 'zod'
 
 import { hash, verify } from '@node-rs/argon2'
+import { render } from '@vue-email/render'
 
 import {
   COOK_ACCESS_TOKEN,
@@ -9,8 +9,10 @@ import {
   INVALID_REFRESH_TOKEN,
   INVALID_USER_REFRESH_TOKEN,
 } from '~/constant/jwt'
+import { tokensTable } from '~/server/database/schema'
 import { rolesTable } from '~/server/database/schema/role'
 import { usersTable } from '~/server/database/schema/user'
+import ResetPasswordTemplate from '~/server/email/resetPasswordTemplate.vue'
 import { useDrizzle } from '~/server/utils/drizzle'
 import {
   ACCESS_TOKEN_EXPIRATION_SEC,
@@ -197,15 +199,53 @@ export const authRouter = router({
     }
   }),
 
-  forgotPassword: publicProcedure.input(forgotPasswordSchema).mutation(async ({ ctx }) => {
+  forgotPassword: publicProcedure.input(forgotPasswordSchema).mutation(async ({ ctx, input }) => {
     try {
-      const mockToken = nanoid()
-      return createSuccessResponse(
-        'Password reset link has been sent to your email',
-        { token: mockToken },
-        200,
-        ctx.transactionId
+      const findUser = await useDrizzle()
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.email, input.email))
+        .limit(1)
+        .then((rows) => rows[0])
+
+      if (!findUser) {
+        throw new BusinessError('Email not found')
+      }
+
+      const payload = {
+        id: findUser.id,
+        email: findUser.email,
+        step: 'reset-password',
+        expiresIn: new Date(Date.now() + 900000),
+      }
+      const createToken = encryptHelperChaCha.encrypt(JSON.stringify(payload))
+
+      await useDrizzle()
+        .insert(tokensTable)
+        .values({
+          token: createToken,
+          user_id: findUser.id,
+          device_info: getDeviceInfo(ctx.event),
+          expires_at: payload.expiresIn,
+        })
+
+      const token = encodeURIComponent(createToken)
+
+      const config = useRuntimeConfig()
+      const html = await render(
+        ResetPasswordTemplate,
+        {
+          title: 'some title',
+          url: `${config.resetPasswordUrl}?token=${token}`,
+        },
+        {
+          pretty: true,
+        }
       )
+
+      console.log(html)
+
+      return createSuccessResponse('Password reset link has been sent to your email', undefined, 200, ctx.transactionId)
     } catch (error) {
       throw handleError(error, { transactionId: ctx.transactionId })
     }

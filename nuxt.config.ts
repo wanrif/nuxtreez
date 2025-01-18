@@ -1,5 +1,7 @@
 import { defineNuxtConfig } from 'nuxt/config'
 
+import vuePlugin from '@vitejs/plugin-vue'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
@@ -184,8 +186,20 @@ export default defineNuxtConfig({
     encryptionAlgorithm: '',
     encryptionPassword: '',
     encryptionSalt: '',
+    emailHost: '',
+    emailPort: '',
+    emailUser: '',
+    emailPassword: '',
+    resetPasswordUrl: '',
     public: {
       // other public config here
+    },
+  },
+  nitro: {
+    rollupConfig: {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      plugins: [vuePlugin()],
     },
   },
   typescript: {
