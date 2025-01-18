@@ -12,18 +12,20 @@ let connection: mysql.Pool | null = null
 
 function createConnection(): mysql.Pool | null {
   try {
+    const runtimeConfig = useRuntimeConfig()
+
     const config: mysql.PoolOptions = {
-      host: process.env.NUXT_MYSQL_HOST,
-      port: Number(process.env.NUXT_MYSQL_PORT),
-      user: process.env.NUXT_MYSQL_USER,
-      database: process.env.NUXT_MYSQL_DATABASE,
+      host: runtimeConfig.mysqlHost,
+      port: Number(runtimeConfig.mysqlPort),
+      user: runtimeConfig.mysqlUser,
+      database: runtimeConfig.mysqlDatabase,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
     }
 
-    if (process.env.MYSQL_PASSWORD) {
-      config.password = process.env.MYSQL_PASSWORD
+    if (runtimeConfig.mysqlPassword) {
+      config.password = runtimeConfig.mysqlPassword
     }
 
     const pool = mysql.createPool(config)
@@ -34,8 +36,8 @@ function createConnection(): mysql.Pool | null {
       logger.error('MySQL Connection Test Failed', {
         code: 'MYSQL_CONNECTION_TEST_FAILED',
         cause: {
-          host: process.env.MYSQL_HOST,
-          database: process.env.MYSQL_DATABASE,
+          host: runtimeConfig.mysqlHost,
+          database: runtimeConfig.mysqlDatabase,
           error: {
             message: errorMessage,
             code: error.code,

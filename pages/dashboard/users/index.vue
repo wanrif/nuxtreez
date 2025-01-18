@@ -43,11 +43,25 @@ const getStatusColor = (status: string) => {
       <div class="flex-1">
         <div class="relative">
           <Icon name="tabler:search" class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-          <input
+          <UInput
             v-model="searchQuery"
-            type="text"
-            placeholder="Search users..."
-            class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:focus:ring-blue-600"
+            icon="i-heroicons-magnifying-glass-20-solid"
+            size="lg"
+            color="blue"
+            variant="outline"
+            :trailing="false"
+            placeholder="Search..."
+            :ui="{
+              strategy: 'merge',
+              base: 'relative block w-full disabled:cursor-not-allowed disabled:opacity-50 border-0',
+              rounded: 'rounded-lg',
+              color: {
+                blue: {
+                  outline:
+                    'shadow-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500',
+                },
+              },
+            }"
           />
         </div>
       </div>
@@ -60,7 +74,7 @@ const getStatusColor = (status: string) => {
           color: {
             gray: {
               outline:
-                'shadow-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600',
+                'shadow-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 capitalize',
             },
           },
         }"
