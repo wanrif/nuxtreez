@@ -39,21 +39,19 @@ const menuItems = computed(() =>
   }))
 )
 
-onMounted(async () => {
-  if (!auth.isAuthenticated && !auth.loading) {
-    return navigateTo('/login')
-  }
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  showContent.value = true
-})
+const loading = ref(true)
 
-onMounted(() => {
-  auth.fetchProfile()
+onMounted(async () => {
+  if (!auth.user) {
+    await auth.checkSession()
+  }
+  loading.value = false
+  showContent.value = true
 })
 </script>
 
 <template>
-  <LoadingSpinner size="lg" :show="!showContent" />
+  <LoadingSpinner size="lg" :show="loading" />
 
   <div
     v-if="auth.isAuthenticated && showContent"

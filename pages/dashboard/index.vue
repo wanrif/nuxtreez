@@ -8,6 +8,21 @@ useHead({
   title: 'Dashboard',
   meta: [{ name: 'description', content: 'Dashboard page description' }],
 })
+
+const auth = useAuthStore()
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+async function loadProfile() {
+  loading.value = true
+  try {
+    await auth.fetchProfile()
+  } catch (err) {
+    error.value = (err as Error).message
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -75,6 +90,8 @@ useHead({
         </div>
       </div>
     </div>
+
+    <button @click="loadProfile">button</button>
   </div>
 </template>
 

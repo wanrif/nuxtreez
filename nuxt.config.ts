@@ -191,4 +191,17 @@ export default defineNuxtConfig({
   typescript: {
     typeCheck: true,
   },
+  nitro: {
+    externals: {
+      inline: ['openpgp'],
+    },
+  },
+  vite: {
+    build: {
+      target: 'esnext',
+    },
+    optimizeDeps: {
+      include: ['openpgp'],
+    },
+  },
 })

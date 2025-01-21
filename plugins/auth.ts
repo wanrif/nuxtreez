@@ -1,8 +1,10 @@
 export default defineNuxtPlugin(async () => {
-  const auth = useAuthStore()
+  // const auth = useAuthStore()
 
   // Check session on app start
-  await auth.checkSession()
+  // if (!auth.user) {
+  //   await auth.checkSession()
+  // }
 
   // Add mock user for testing - REMOVE IN PRODUCTION
   if (import.meta.client) {

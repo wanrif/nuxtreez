@@ -1,13 +1,10 @@
 import { z } from 'zod'
 
 import { rolesTable, usersTable } from '~/server/database/schema'
+import { pgpService } from '~/server/services/pgpService'
 import type { IUser } from '~/types'
 
 import { protectedProcedure, router } from '../trpc'
-
-type UserResponse = {
-  user: IUser
-}
 
 export const userRouter = router({
   profile: protectedProcedure.query(async ({ ctx }) => {
@@ -39,11 +36,8 @@ export const userRouter = router({
 
       if (!findUser) throw new NotFoundError('User not found')
 
-      const encryptedId = encryptHelper.encrypt(ctx.user.id, 'base64')
-      const encryptedRoleId = encryptHelper.encrypt(ctx.user.role?.id ?? '', 'base64')
-
       const user: IUser = {
-        id: encryptedId,
+        id: findUser.users.id,
         name: findUser.users.name,
         email: findUser.users.email,
         phone: findUser.users.phone ?? undefined,
@@ -52,13 +46,20 @@ export const userRouter = router({
         bio: findUser.users.bio ?? undefined,
         role: findUser.roles
           ? {
-              id: encryptedRoleId,
+              id: findUser.roles.id,
               name: findUser.roles.name,
             }
           : null,
       }
 
-      return createSuccessResponse<UserResponse>('Profile fetched successfully', { user }, 200, ctx.transactionId)
+      const encryptedData = await pgpService.encryptProfileData(user)
+
+      return createSuccessResponse<{ profile: string }>(
+        'Profile fetched successfully',
+        { profile: encryptedData }, // encryptedData is already a string
+        200,
+        ctx.transactionId
+      )
     } catch (error) {
       throw handleError(error)
     }
@@ -127,7 +128,7 @@ export const userRouter = router({
         if (!updatedUser) throw new NotFoundError('Updated user not found')
 
         const user: IUser = {
-          id: encryptHelper.encrypt(updatedUser.users.id, 'base64'),
+          id: updatedUser.users.id,
           name: updatedUser.users.name,
           email: updatedUser.users.email,
           phone: updatedUser.users.phone ?? undefined,
@@ -136,13 +137,20 @@ export const userRouter = router({
           bio: updatedUser.users.bio ?? undefined,
           role: updatedUser.roles
             ? {
-                id: encryptHelper.encrypt(updatedUser.roles.id, 'base64'),
+                id: updatedUser.roles.id,
                 name: updatedUser.roles.name,
               }
             : null,
         }
 
-        return createSuccessResponse<UserResponse>('Profile updated successfully', { user }, 200, ctx.transactionId)
+        const encryptedData = await pgpService.encryptProfileData(user)
+
+        return createSuccessResponse<{ user: string }>(
+          'Profile updated successfully',
+          { user: encryptedData },
+          200,
+          ctx.transactionId
+        )
       } catch (error) {
         console.error(error)
         throw handleError(error)

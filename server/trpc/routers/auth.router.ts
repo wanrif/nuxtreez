@@ -19,6 +19,7 @@ import {
   generateRefreshJWT,
 } from '~/server/utils/jwt'
 
+import { pgpService } from '../../services/pgpService'
 import { protectedProcedure, publicProcedure, router } from '../trpc'
 
 interface IToken {
@@ -133,14 +134,7 @@ export const authRouter = router({
         maxAge: REFRESH_TOKEN_EXPIRATION_SEC,
       })
 
-      return createSuccessResponse<IToken>(
-        'Login successful',
-        {
-          token: { accessToken, refreshToken },
-        },
-        200,
-        ctx.transactionId
-      )
+      return createSuccessResponse('Login successful', undefined, 200, ctx.transactionId)
     } catch (error) {
       throw handleError(error, { transactionId: ctx.transactionId })
     }
@@ -351,4 +345,30 @@ export const authRouter = router({
     await deactivateUserTokens(ctx.user.id)
     return createSuccessResponse('Logged out from all devices', undefined, 200, ctx.transactionId)
   }),
+
+  getPublicKey: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const publicKey = await pgpService.getPublicKey()
+      return createSuccessResponse('Public key fetched successfully', { publicKey }, 200, ctx.transactionId)
+    } catch (error) {
+      throw handleError(error)
+    }
+  }),
+
+  exchangeKeys: protectedProcedure
+    .input(
+      z.object({
+        clientPublicKey: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await pgpService.setClientPublicKey(input.clientPublicKey)
+        const serverPublicKey = await pgpService.getPublicKey()
+
+        return createSuccessResponse('Keys exchanged successfully', { serverPublicKey }, 200, ctx.transactionId)
+      } catch (error) {
+        throw handleError(error)
+      }
+    }),
 })
