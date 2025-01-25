@@ -10,6 +10,6 @@ export default defineConfig({
     port: Number(process.env.NUXT_MYSQL_PORT) || 3306,
     user: process.env.NUXT_MYSQL_USER || 'root',
     database: process.env.NUXT_MYSQL_DATABASE || 'nuxtreez',
-    ...(process.env.NUXT_MYSQL_PASSWORD ? { password: process.env.NUXT_MYSQL_PASSWORD } : {}),
+    ...(process.env.NUXT_MYSQL_PASSWORD ? { password: process.env.NUXT_MYSQL_PASSWORD || 'Wslroot123!' } : {}),
   },
 })

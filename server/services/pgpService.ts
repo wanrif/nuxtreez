@@ -20,18 +20,55 @@ export class PgpService {
   }
 
   async initialize() {
-    const now = Date.now()
-    if (!this.serverKeyPair || now - this.keyCreationTime > this.KEY_ROTATION_INTERVAL) {
-      const serverId = `Server-${generateId()}`
-      const serverEmail = `server-${generateId()}@nuxtreez.local`
-      const keyPair = await generateKeyPair(serverId, serverEmail)
-      this.serverKeyPair = {
-        publicKey: keyPair.publicKey,
-        privateKey: keyPair.privateKey,
+    try {
+      const now = Date.now()
+      if (!this.serverKeyPair || now - this.keyCreationTime > this.KEY_ROTATION_INTERVAL) {
+        const serverId = `Server-${generateId()}`
+        const serverEmail = `server-${generateId()}@nuxtreez.local`
+
+        let attempts = 0
+        let keyPair = null
+        let error = null
+
+        while (attempts < 3 && !keyPair) {
+          try {
+            keyPair = await generateKeyPair(serverId, serverEmail)
+
+            // Verify the key pair works
+            const testMessage = 'test-' + Date.now()
+            const encrypted = await encryptWithSessionKey(testMessage, keyPair.publicKey)
+            const decrypted = await decryptWithSessionKey(encrypted, keyPair.privateKey)
+
+            if (decrypted !== testMessage) {
+              throw new Error('Key verification failed')
+            }
+
+            this.serverKeyPair = {
+              publicKey: keyPair.publicKey,
+              privateKey: keyPair.privateKey,
+            }
+            this.keyCreationTime = now
+
+            return this.serverKeyPair.publicKey
+          } catch (err) {
+            error = err
+            attempts++
+            await new Promise((resolve) => setTimeout(resolve, 1000 * attempts))
+          }
+        }
+
+        throw error || new Error('Failed to generate valid key pair after multiple attempts')
       }
-      this.keyCreationTime = now
+
+      return this.serverKeyPair.publicKey
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown error')
+      logger.error('PGP initialization failed:', {
+        error: error.message,
+        stack: error.stack,
+      })
+      throw new Error(`PGP initialization failed: ${error.message}`)
     }
-    return this.serverKeyPair.publicKey
   }
 
   async setClientPublicKey(publicKey: string) {

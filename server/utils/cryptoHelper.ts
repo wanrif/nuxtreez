@@ -9,27 +9,37 @@ interface KeyPair {
 }
 
 export async function generateKeyPair(name: string, email: string): Promise<KeyPair> {
-  const { privateKey, publicKey } = await openpgp.generateKey({
-    type: 'ecc', // More explicit than curve25519
-    curve: 'curve25519Legacy', // Keep curve25519
-    userIDs: [{ name, email }],
-    format: 'armored',
-    config: {
-      preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes256,
-      preferredCompressionAlgorithm: openpgp.enums.compression.zlib,
-      preferredHashAlgorithm: openpgp.enums.hash.sha512,
-    },
-    // Add RSA specific options for better security
-    rsaBits: 4096, // In case fallback to RSA is needed
-    keyExpirationTime: 365 * 2, // Key valid for 2 years
-  })
+  // Create timestamp 5 minutes in the past to avoid any clock sync issues
+  const currentDate = new Date(Date.now() - 5 * 60 * 1000)
 
-  const sessionKey = await generateRandomBytes(32)
+  try {
+    const { privateKey, publicKey } = await openpgp.generateKey({
+      type: 'ecc',
+      curve: 'curve25519Legacy', // in openpgp v6 curve25519 becomes curve25519Legacy
+      userIDs: [{ name, email }],
+      format: 'armored',
+      date: currentDate,
+      config: {
+        preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes256,
+        preferredHashAlgorithm: openpgp.enums.hash.sha512,
+      },
+    })
 
-  return {
-    publicKey,
-    privateKey,
-    sessionKey,
+    // Verify the keys before returning
+    const pubKey = await openpgp.readKey({ armoredKey: publicKey })
+
+    // Verify key validity period
+    const validity = await pubKey.getExpirationTime()
+    if (validity && validity < currentDate) {
+      throw new Error('Generated key is already expired')
+    }
+
+    const sessionKey = await generateRandomBytes(32)
+    return { publicKey, privateKey, sessionKey }
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error('Unknown error')
+    console.error('Key generation error:', error)
+    throw new Error(`Failed to generate valid key pair: ${error.message}`)
   }
 }
 
